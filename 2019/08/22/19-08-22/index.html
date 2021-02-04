@@ -1,0 +1,116 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta name="generator" content="Hexo 3.9.0"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"><meta name="author" content="John Doe"><meta name="renderer" content="webkit"><meta name="copyright" content="John Doe"><meta name="keywords" content="Mr.Deng的博客"><meta name="description" content="null"><meta name="Cache-Control" content="no-cache"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><title>java解析excel表格数据 · Mr.Long's Blog</title><link rel="stylesheet" href="/css/style.css?v=2018.7.9"><link rel="stylesheet" href="/css/animation.css?v=2018.7.9"><link rel="icon" href="/img/assets/favicon.ico"><link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css?version=1.5.6"><!-- scripts--><script>(function( w ){
+  "use strict";
+  // rel=preload support test
+  if( !w.loadCSS ){
+    w.loadCSS = function(){};
+  }
+  // define on the loadCSS obj
+  var rp = loadCSS.relpreload = {};
+  // rel=preload feature support test
+  // runs once and returns a function for compat purposes
+  rp.support = (function(){
+    var ret;
+    try {
+      ret = w.document.createElement( "link" ).relList.supports( "preload" );
+    } catch (e) {
+      ret = false;
+    }
+    return function(){
+      return ret;
+    };
+  })();
+
+  // if preload isn't supported, get an asynchronous load by using a non-matching media attribute
+  // then change that media back to its intended value on load
+  rp.bindMediaToggle = function( link ){
+    // remember existing media attr for ultimate state, or default to 'all'
+    var finalMedia = link.media || "all";
+
+    function enableStylesheet(){
+      link.media = finalMedia;
+    }
+
+    // bind load handlers to enable media
+    if( link.addEventListener ){
+      link.addEventListener( "load", enableStylesheet );
+    } else if( link.attachEvent ){
+      link.attachEvent( "onload", enableStylesheet );
+    }
+
+    // Set rel and non-applicable media type to start an async request
+    // note: timeout allows this to happen async to let rendering continue in IE
+    setTimeout(function(){
+      link.rel = "stylesheet";
+      link.media = "only x";
+    });
+    // also enable media after 3 seconds,
+    // which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
+    setTimeout( enableStylesheet, 3000 );
+  };
+
+  // loop through link elements in DOM
+  rp.poly = function(){
+    // double check this to prevent external calls from running
+    if( rp.support() ){
+      return;
+    }
+    var links = w.document.getElementsByTagName( "link" );
+    for( var i = 0; i < links.length; i++ ){
+      var link = links[ i ];
+      // qualify links to those with rel=preload and as=style attrs
+      if( link.rel === "preload" && link.getAttribute( "as" ) === "style" && !link.getAttribute( "data-loadcss" ) ){
+        // prevent rerunning on link
+        link.setAttribute( "data-loadcss", true );
+        // bind listeners to toggle media back
+        rp.bindMediaToggle( link );
+      }
+    }
+  };
+
+  // if unsupported, run the polyfill
+  if( !rp.support() ){
+    // run once at least
+    rp.poly();
+
+    // rerun poly on an interval until onload
+    var run = w.setInterval( rp.poly, 500 );
+    if( w.addEventListener ){
+      w.addEventListener( "load", function(){
+        rp.poly();
+        w.clearInterval( run );
+      } );
+    } else if( w.attachEvent ){
+      w.attachEvent( "onload", function(){
+        rp.poly();
+        w.clearInterval( run );
+      } );
+    }
+  }
+
+
+  // commonjs
+  if( typeof exports !== "undefined" ){
+    exports.loadCSS = loadCSS;
+  }
+  else {
+    w.loadCSS = loadCSS;
+  }
+}( typeof global !== "undefined" ? global : this ) );</script><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js" defer></script><script src="/js/main.js?v=2018.7.9" defer></script><!-- fancybox--><link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" defer></script><!-- busuanzi--><script async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script></head><body><section class="profile-close" id="cxo-profile"><div class="profile-avatar"><i class="fa fa-caret-left"></i><img src="/img/assets/cat.png"></div><!--.profile-saying
+  i.fa.fa-comment
+  .saying--><div class="cxo-profile-inner"><div class="profile-name">longlongyu</div><div class="profile-signature">for me</div><div class="friends"><div>FRIENDS</div><span><a href="//github.com/Longlongyu" target="_black">friendA</a></span><span><a href="//github.com/" target="_black">friendB</a></span><span><a href="//github.com/" target="_black">friendC</a></span></div><div class="read-progress"></div></div></section><header id="cxo-intro" style="height: 70vh;background-image: url(/img/intro/index-bg.png);"><nav id="cxo-intro-nav"><section><div class="intro-nav-title"><a href="/">Mr.Long's Blog</a></div><div class="intro-nav-label-box"><a href="/">Home</a><a href="/about/">About</a><a href="/archives/">Archives</a><a href="/tags/">Tags</a></div><i class="fa fa-bars intro-nav-menu"><div class="intro-nav-drop"><a href="/">Home</a><a href="/about/">About</a><a href="/archives/">Archives</a><a href="/tags/">Tags</a></div></i><div class="clear"></div></section></nav><h1 class="post-title">java解析excel表格数据</h1><div class="post-intros"><div class="post-intro-meta"><span class="post-intro-time"><i class="post-intro-calendar fa fa-calendar"></i><span>2019-08-22</span></span><span class="post-intro-tags"><a class="intro-tag fa fa-tag" href="javascript:void(0)" date-tags="poi"> poi</a></span></div></div></header><article class="cxo-up" id="cxo-content-outer"><section id="cxo-content-inner"><article class="article-entry" id="post"><blockquote>
+<p>今天想给大家分享的是如何用Java解析excel表格。</p>
+</blockquote>
+<h2 id="Java解析excel"><a href="#Java解析excel" class="headerlink" title="Java解析excel"></a>Java解析excel</h2><h3 id="pom文件依赖"><a href="#pom文件依赖" class="headerlink" title="pom文件依赖"></a>pom文件依赖</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">&lt;groupId&gt;org.apache.poi&lt;/groupId&gt;</span><br><span class="line">&lt;artifactId&gt;poi-ooxml&lt;/artifactId&gt;</span><br><span class="line">&lt;version&gt;4.0.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>这里要注意的是4.0.0版本包含了poi和poi-ooxml，使得既能解析2003版本的excel(后缀名为.xls)，也能解析2007以上版本的excel(后缀名为.xlsx)</p>
+</blockquote>
+<h3 id="如何解析excel"><a href="#如何解析excel" class="headerlink" title="如何解析excel"></a>如何解析excel</h3><blockquote>
+<p>话不多说直接上代码</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line">String path=&quot;F:/xxx.xlsx&quot;;	//本地F盘下的一个excel表格</span><br><span class="line">    File excelFile = new File(path);		</span><br><span class="line">    FileInputStream is = new FileInputStream(excelFile);			</span><br><span class="line">          Workbook workbook = null;</span><br><span class="line">          workbook = new XSSFWorkbook(is);	//如果是2003版本则用HSSFWorkbook</span><br><span class="line">            	Sheet xssfsheet = workbook.getSheetAt(0);         //打开第一个sheet(类似打开第二、第三等)</span><br><span class="line">            	int rowstart = xssfsheet.getFirstRowNum();  </span><br><span class="line">            	int rowEnd = xssfsheet.getLastRowNum();  </span><br><span class="line">            	for(int j = rowstart ; j &lt; rowEnd; j++)&#123;       //行</span><br><span class="line">            		Row row = xssfsheet.getRow(j);  </span><br><span class="line">            		if(null == row) continue;  </span><br><span class="line">            		int cellStart = row.getFirstCellNum();   //第一行</span><br><span class="line">            		int cellEnd = row.getLastCellNum();    //最后一行</span><br><span class="line">            		Map&lt;String,Object&gt; map=new HashMap&lt;&gt;(); 					</span><br><span class="line">            		for(int k = cellStart; k &lt;= cellEnd; k++)&#123;      //列  </span><br><span class="line">            		    Cell cell = row.getCell(k);</span><br><span class="line">            		    DecimalFormat df = new DecimalFormat(&quot;0&quot;); // 格式化为整数</span><br><span class="line">            		    SimpleDateFormat sdf = new SimpleDateFormat(&quot;yyyy-MM-dd&quot;); // 日期格式化</span><br><span class="line">            		    if(null == cell) continue;</span><br><span class="line">            		          String cellValue = &quot;&quot;;</span><br><span class="line">            			switch (cell.getCellType())&#123;  </span><br><span class="line">            			case NUMERIC:      // 数字      						  </span><br><span class="line">            			String dataFormat = cell.getCellStyle().getDataFormatString();	// 单元格格式</span><br><span class="line">            			boolean isDate = DateUtil.isCellDateFormatted(cell);</span><br><span class="line">            			if (&quot;General&quot;.equals(dataFormat)) &#123;</span><br><span class="line">            				cellValue = df.format(cell.getNumericCellValue());</span><br><span class="line">            			&#125; else if (isDate) &#123;</span><br><span class="line">            				cellValue = sdf.format(cell.getDateCellValue());</span><br><span class="line">            			&#125; else &#123;</span><br><span class="line">            				cellValue = String.valueOf(cell.getNumericCellValue());</span><br><span class="line">            			&#125;</span><br><span class="line">            			break;</span><br><span class="line">				case STRING:      // 字符串  </span><br><span class="line">            				cellValue = cell.getStringCellValue();</span><br><span class="line">            			break;  </span><br><span class="line">            			case BOOLEAN:   // Boolean  </span><br><span class="line">            				cellValue = String.valueOf(cell.getBooleanCellValue());</span><br><span class="line">            			break;  </span><br><span class="line">            			case FORMULA:   // 公式  </span><br><span class="line">            				cellValue = cell.getCellFormula();</span><br><span class="line">            			break;  </span><br><span class="line">            			case BLANK:   // 空值  </span><br><span class="line">            				break;  </span><br><span class="line">            			case ERROR:   // 故障  </span><br><span class="line">            				break;  </span><br><span class="line">            			default:  </span><br><span class="line">            				break;</span><br><span class="line">            			&#125;        					</span><br><span class="line">            			if(k == 0)&#123;      						</span><br><span class="line">            				map.put(&quot;xxx&quot;, cellValue);       						</span><br><span class="line">            			&#125;else if(k == 1)&#123;      						</span><br><span class="line">            				map.put(&quot;xxx&quot;, cellValue);       						</span><br><span class="line">            			&#125;else if(k == 2)&#123;</span><br><span class="line">            				map.put(&quot;xxx&quot;, cellValue);       						</span><br><span class="line">     			......</span><br><span class="line">            		&#125;</span><br><span class="line">            		workbook.close();</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>以上就是java解析excel表格的方法，需要注意的是<font color="red"><strong>如果单元格的数字为日期，必须进行格式的转换，如果是整数也要进行格式的转换。还有就是公式只能获取到公式的表达式比如SUM(…)，如果要获取到公式里的数字或者字符串要用方法cell.setCellType(CellType.NUMERIC)等强制转换一下</strong></font>。</p>
+</blockquote>
+</article><!-- lincense--><div class="license-wrapper"><p> <span>Author:  </span><a href="http://yoursite.com">John Doe</a></p><p> <span>Link:  </span><a href="http://yoursite.com/2019/08/22/19-08-22/">http://yoursite.com/2019/08/22/19-08-22/</a></p><p> <span>Copyright:  </span><span>All articles in this blog are licensed under <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/3.0">CC BY-NC-SA 3.0</a> unless stating additionally.</span></p></div><div class="post-paginator"><a class="prevSlogan" href="/2019/08/26/19-08-26/" title="flume启动命令"><span>< PreviousPost</span><br><span class="prevTitle">flume启动命令</span></a><a class="nextSlogan" href="/2019/08/21/19-08-21/" title="corn表达式"><span>NextPost ></span><br><span class="nextTitle">corn表达式</span></a><div class="clear"></div></div><div id="comment"></div></section></article><footer id="cxo-footer-outer"><div id="cxo-footer-inner"><p class="footer-container"><span>Site by </span><a href="http://hexo.io"><span>Hexo</span></a><span> | theme </span><a href="https://github.com/Longlongyu/hexo-theme-Cxo"><span>Cxo</span></a></p><i class="fa fa-user"> </i><span id="busuanzi_value_site_uv"></span><span> | </span><i class="fa fa-eye"> </i><span id="busuanzi_value_site_pv"></span></div></footer><!-- catelog--><div class="toc-wrapper" style="top: 70vh;"><div class="toc-catalog"><i class="fa fa-list"> </i><span>CATALOG</span></div><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Java解析excel"><span class="toc-number">1.</span> <span class="toc-text">Java解析excel</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#pom文件依赖"><span class="toc-number">1.1.</span> <span class="toc-text">pom文件依赖</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何解析excel"><span class="toc-number">1.2.</span> <span class="toc-text">如何解析excel</span></a></li></ol></li></ol></div><!-- top--><i class="fa fa-arrow-up close" id="go-up" aria-hidden="true"></i><script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body></html>

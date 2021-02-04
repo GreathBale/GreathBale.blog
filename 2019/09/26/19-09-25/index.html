@@ -1,0 +1,123 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta name="generator" content="Hexo 3.9.0"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"><meta name="author" content="John Doe"><meta name="renderer" content="webkit"><meta name="copyright" content="John Doe"><meta name="keywords" content="Mr.Deng的博客"><meta name="description" content="null"><meta name="Cache-Control" content="no-cache"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><title>文件树的生成和展开 · Mr.Long's Blog</title><link rel="stylesheet" href="/css/style.css?v=2018.7.9"><link rel="stylesheet" href="/css/animation.css?v=2018.7.9"><link rel="icon" href="/img/assets/favicon.ico"><link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css?version=1.5.6"><!-- scripts--><script>(function( w ){
+  "use strict";
+  // rel=preload support test
+  if( !w.loadCSS ){
+    w.loadCSS = function(){};
+  }
+  // define on the loadCSS obj
+  var rp = loadCSS.relpreload = {};
+  // rel=preload feature support test
+  // runs once and returns a function for compat purposes
+  rp.support = (function(){
+    var ret;
+    try {
+      ret = w.document.createElement( "link" ).relList.supports( "preload" );
+    } catch (e) {
+      ret = false;
+    }
+    return function(){
+      return ret;
+    };
+  })();
+
+  // if preload isn't supported, get an asynchronous load by using a non-matching media attribute
+  // then change that media back to its intended value on load
+  rp.bindMediaToggle = function( link ){
+    // remember existing media attr for ultimate state, or default to 'all'
+    var finalMedia = link.media || "all";
+
+    function enableStylesheet(){
+      link.media = finalMedia;
+    }
+
+    // bind load handlers to enable media
+    if( link.addEventListener ){
+      link.addEventListener( "load", enableStylesheet );
+    } else if( link.attachEvent ){
+      link.attachEvent( "onload", enableStylesheet );
+    }
+
+    // Set rel and non-applicable media type to start an async request
+    // note: timeout allows this to happen async to let rendering continue in IE
+    setTimeout(function(){
+      link.rel = "stylesheet";
+      link.media = "only x";
+    });
+    // also enable media after 3 seconds,
+    // which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
+    setTimeout( enableStylesheet, 3000 );
+  };
+
+  // loop through link elements in DOM
+  rp.poly = function(){
+    // double check this to prevent external calls from running
+    if( rp.support() ){
+      return;
+    }
+    var links = w.document.getElementsByTagName( "link" );
+    for( var i = 0; i < links.length; i++ ){
+      var link = links[ i ];
+      // qualify links to those with rel=preload and as=style attrs
+      if( link.rel === "preload" && link.getAttribute( "as" ) === "style" && !link.getAttribute( "data-loadcss" ) ){
+        // prevent rerunning on link
+        link.setAttribute( "data-loadcss", true );
+        // bind listeners to toggle media back
+        rp.bindMediaToggle( link );
+      }
+    }
+  };
+
+  // if unsupported, run the polyfill
+  if( !rp.support() ){
+    // run once at least
+    rp.poly();
+
+    // rerun poly on an interval until onload
+    var run = w.setInterval( rp.poly, 500 );
+    if( w.addEventListener ){
+      w.addEventListener( "load", function(){
+        rp.poly();
+        w.clearInterval( run );
+      } );
+    } else if( w.attachEvent ){
+      w.attachEvent( "onload", function(){
+        rp.poly();
+        w.clearInterval( run );
+      } );
+    }
+  }
+
+
+  // commonjs
+  if( typeof exports !== "undefined" ){
+    exports.loadCSS = loadCSS;
+  }
+  else {
+    w.loadCSS = loadCSS;
+  }
+}( typeof global !== "undefined" ? global : this ) );</script><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js" defer></script><script src="/js/main.js?v=2018.7.9" defer></script><!-- fancybox--><link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" defer></script><!-- busuanzi--><script async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script></head><body><section class="profile-close" id="cxo-profile"><div class="profile-avatar"><i class="fa fa-caret-left"></i><img src="/img/assets/cat.png"></div><!--.profile-saying
+  i.fa.fa-comment
+  .saying--><div class="cxo-profile-inner"><div class="profile-name">longlongyu</div><div class="profile-signature">for me</div><div class="friends"><div>FRIENDS</div><span><a href="//github.com/Longlongyu" target="_black">friendA</a></span><span><a href="//github.com/" target="_black">friendB</a></span><span><a href="//github.com/" target="_black">friendC</a></span></div><div class="read-progress"></div></div></section><header id="cxo-intro" style="height: 70vh;background-image: url(/img/intro/index-bg.png);"><nav id="cxo-intro-nav"><section><div class="intro-nav-title"><a href="/">Mr.Long's Blog</a></div><div class="intro-nav-label-box"><a href="/">Home</a><a href="/about/">About</a><a href="/archives/">Archives</a><a href="/tags/">Tags</a></div><i class="fa fa-bars intro-nav-menu"><div class="intro-nav-drop"><a href="/">Home</a><a href="/about/">About</a><a href="/archives/">Archives</a><a href="/tags/">Tags</a></div></i><div class="clear"></div></section></nav><h1 class="post-title">文件树的生成和展开</h1><div class="post-intros"><div class="post-intro-meta"><span class="post-intro-time"><i class="post-intro-calendar fa fa-calendar"></i><span>2019-09-26</span></span><span class="post-intro-tags"><a class="intro-tag fa fa-tag" href="javascript:void(0)" date-tags="tree"> tree</a></span></div></div></header><article class="cxo-up" id="cxo-content-outer"><section id="cxo-content-inner"><article class="article-entry" id="post"><blockquote>
+<p>最近接触到的一个项目，要求根据某个文件夹下的文件层级生成一棵文件树，这里介绍一下我所使用的方法</p>
+</blockquote>
+<h2 id="文件树"><a href="#文件树" class="headerlink" title="文件树"></a>文件树</h2><h3 id="什么是树形结构"><a href="#什么是树形结构" class="headerlink" title="什么是树形结构"></a>什么是树形结构</h3><blockquote>
+<p>树形结构指的是数据元素之间存在着“一对多”的树形关系的数据结构，是一类重要的非线性数据结构。<br>在树形结构中，树根结点没有前驱结点，其余每个结点有且只有一个前驱结点。叶子结点没有后续结点，其余每个结点的后续节点数可以是一个也可以是多个。</p>
+</blockquote>
+<h3 id="后台"><a href="#后台" class="headerlink" title="后台"></a>后台</h3><blockquote>
+<p>后台主要是封装文件夹下文件的层级数据，代码如下：</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">     /**</span><br><span class="line">     * 根据指定目录生成其下所有的树级json字符串</span><br><span class="line">     * @param dirPath ：文件夹路径</span><br><span class="line">     * @return : 返回json数组，即一个目录下有哪些子文件或子文件夹</span><br><span class="line">     */</span><br><span class="line">    public static JSONArray fileTreeByDirPath(String dirPath) &#123;</span><br><span class="line">        JSONArray jsonArray = new JSONArray();</span><br><span class="line">        if (dirPath == null || &quot;&quot;.equals(dirPath.trim())) &#123;</span><br><span class="line">            logger.error(&quot;参数传入错误：&quot; + dirPath);</span><br><span class="line">            return jsonArray;</span><br><span class="line">        &#125;</span><br><span class="line">        File rootFile = new File(dirPath);</span><br><span class="line">        if (!rootFile.exists() || !rootFile.isDirectory()) &#123;</span><br><span class="line">            logger.error(dirPath + &quot; 目录不存在...&quot;);</span><br><span class="line">            return jsonArray;</span><br><span class="line">        &#125;</span><br><span class="line">        File[] fileArr = rootFile.listFiles();</span><br><span class="line">        for (File file : fileArr) &#123;</span><br><span class="line">            if (file.isFile()) &#123;</span><br><span class="line">                /**如果当前是文件*/</span><br><span class="line">                JSONObject jsonObject = new JSONObject();</span><br><span class="line">                jsonObject.put(&quot;text&quot;, file.getName());</span><br><span class="line">                jsonObject.put(&quot;path&quot;, file.getParentFile().getPath());</span><br><span class="line">                jsonArray.add(jsonObject);</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                /**如果当前是目录*/</span><br><span class="line">                JSONObject jsonObject = new JSONObject();</span><br><span class="line">                jsonObject.put(&quot;text&quot;, file.getName());</span><br><span class="line">//                if (count &lt;= 2) &#123;</span><br><span class="line">//                    jsonObject.put(&quot;open&quot;, true);</span><br><span class="line">//                &#125;</span><br><span class="line">                JSONArray childrenJsonArray = fileTreeByDirPath(file.getPath());</span><br><span class="line">                jsonObject.put(&quot;children&quot;, childrenJsonArray);</span><br><span class="line">                jsonArray.add(jsonObject);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">       </span><br><span class="line">        return jsonArray;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>从上我们可以看到主要是赋予节点两个属性”text”和”path”，如果节点下有子节点的话添加一个”children”属性，采用递归再去遍历子节点的内容，最后封装成一个数组返回前端。</p>
+</blockquote>
+<h3 id="前端"><a href="#前端" class="headerlink" title="前端"></a>前端</h3><blockquote>
+<p>在这里我使用的是较为简单的easyui tree，主要使用的是递归的思想：当该节点下还有子节点时，就再去访问子节点的内容，如果子节点又有子节点继续下去，直到再无子节点为止。大家有兴趣的话也可以采用ztree来做。如下所示:<br><img src="/2019/09/26/19-09-25/shu.jpg" alt="文件树"></p>
+</blockquote>
+<p>js代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">$(&apos;#mytree&apos;).tree(&#123;</span><br><span class="line">        checkbox : false,</span><br><span class="line">        data : treeData,</span><br><span class="line">        animate : true,</span><br><span class="line">        lines: true,</span><br><span class="line">        dnd : false,</span><br><span class="line">        loader: function(param, success, error)&#123;</span><br><span class="line">        &#125;,</span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">function getTree() &#123;</span><br><span class="line">    $.ajax(&#123;</span><br><span class="line">        url : url,</span><br><span class="line">        type: &quot;post&quot;,</span><br><span class="line">        async : false,</span><br><span class="line">        cache : false,</span><br><span class="line">        dataType: &quot;json&quot;,</span><br><span class="line">        success: function (data)&#123;</span><br><span class="line">            for(var i=0;i&lt;data.length;i++)&#123;</span><br><span class="line">                data[i].state=&quot;open&quot;</span><br><span class="line">            &#125;</span><br><span class="line">            treeData = data;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>这里先执行getTree方法将数据获取到，然后再给控件赋值，设置的是整个树默认展开</p>
+</blockquote>
+</article><!-- lincense--><div class="license-wrapper"><p> <span>Author:  </span><a href="http://yoursite.com">John Doe</a></p><p> <span>Link:  </span><a href="http://yoursite.com/2019/09/26/19-09-25/">http://yoursite.com/2019/09/26/19-09-25/</a></p><p> <span>Copyright:  </span><span>All articles in this blog are licensed under <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/3.0">CC BY-NC-SA 3.0</a> unless stating additionally.</span></p></div><div class="post-paginator"><a class="prevSlogan" href="/2019/10/11/19-10-11/" title="java使用smb远程访问共享文件夹(密码有特殊字符的解决情况)"><span>< PreviousPost</span><br><span class="prevTitle">java使用smb远程访问共享文件夹(密码有特殊字符的解决情况)</span></a><a class="nextSlogan" href="/2019/09/18/19-09-18/" title="Lucene 全文检索入门"><span>NextPost ></span><br><span class="nextTitle">Lucene 全文检索入门</span></a><div class="clear"></div></div><div id="comment"></div></section></article><footer id="cxo-footer-outer"><div id="cxo-footer-inner"><p class="footer-container"><span>Site by </span><a href="http://hexo.io"><span>Hexo</span></a><span> | theme </span><a href="https://github.com/Longlongyu/hexo-theme-Cxo"><span>Cxo</span></a></p><i class="fa fa-user"> </i><span id="busuanzi_value_site_uv"></span><span> | </span><i class="fa fa-eye"> </i><span id="busuanzi_value_site_pv"></span></div></footer><!-- catelog--><div class="toc-wrapper" style="top: 70vh;"><div class="toc-catalog"><i class="fa fa-list"> </i><span>CATALOG</span></div><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#文件树"><span class="toc-number">1.</span> <span class="toc-text">文件树</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#什么是树形结构"><span class="toc-number">1.1.</span> <span class="toc-text">什么是树形结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#后台"><span class="toc-number">1.2.</span> <span class="toc-text">后台</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#前端"><span class="toc-number">1.3.</span> <span class="toc-text">前端</span></a></li></ol></li></ol></div><!-- top--><i class="fa fa-arrow-up close" id="go-up" aria-hidden="true"></i><script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body></html>

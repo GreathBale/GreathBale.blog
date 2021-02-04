@@ -1,0 +1,147 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta name="generator" content="Hexo 3.9.0"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"><meta name="author" content="John Doe"><meta name="renderer" content="webkit"><meta name="copyright" content="John Doe"><meta name="keywords" content="Mr.Deng的博客"><meta name="description" content="null"><meta name="Cache-Control" content="no-cache"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><title>监控和管理Cassandra · Mr.Long's Blog</title><link rel="stylesheet" href="/css/style.css?v=2018.7.9"><link rel="stylesheet" href="/css/animation.css?v=2018.7.9"><link rel="icon" href="/img/assets/favicon.ico"><link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css?version=1.5.6"><!-- scripts--><script>(function( w ){
+  "use strict";
+  // rel=preload support test
+  if( !w.loadCSS ){
+    w.loadCSS = function(){};
+  }
+  // define on the loadCSS obj
+  var rp = loadCSS.relpreload = {};
+  // rel=preload feature support test
+  // runs once and returns a function for compat purposes
+  rp.support = (function(){
+    var ret;
+    try {
+      ret = w.document.createElement( "link" ).relList.supports( "preload" );
+    } catch (e) {
+      ret = false;
+    }
+    return function(){
+      return ret;
+    };
+  })();
+
+  // if preload isn't supported, get an asynchronous load by using a non-matching media attribute
+  // then change that media back to its intended value on load
+  rp.bindMediaToggle = function( link ){
+    // remember existing media attr for ultimate state, or default to 'all'
+    var finalMedia = link.media || "all";
+
+    function enableStylesheet(){
+      link.media = finalMedia;
+    }
+
+    // bind load handlers to enable media
+    if( link.addEventListener ){
+      link.addEventListener( "load", enableStylesheet );
+    } else if( link.attachEvent ){
+      link.attachEvent( "onload", enableStylesheet );
+    }
+
+    // Set rel and non-applicable media type to start an async request
+    // note: timeout allows this to happen async to let rendering continue in IE
+    setTimeout(function(){
+      link.rel = "stylesheet";
+      link.media = "only x";
+    });
+    // also enable media after 3 seconds,
+    // which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
+    setTimeout( enableStylesheet, 3000 );
+  };
+
+  // loop through link elements in DOM
+  rp.poly = function(){
+    // double check this to prevent external calls from running
+    if( rp.support() ){
+      return;
+    }
+    var links = w.document.getElementsByTagName( "link" );
+    for( var i = 0; i < links.length; i++ ){
+      var link = links[ i ];
+      // qualify links to those with rel=preload and as=style attrs
+      if( link.rel === "preload" && link.getAttribute( "as" ) === "style" && !link.getAttribute( "data-loadcss" ) ){
+        // prevent rerunning on link
+        link.setAttribute( "data-loadcss", true );
+        // bind listeners to toggle media back
+        rp.bindMediaToggle( link );
+      }
+    }
+  };
+
+  // if unsupported, run the polyfill
+  if( !rp.support() ){
+    // run once at least
+    rp.poly();
+
+    // rerun poly on an interval until onload
+    var run = w.setInterval( rp.poly, 500 );
+    if( w.addEventListener ){
+      w.addEventListener( "load", function(){
+        rp.poly();
+        w.clearInterval( run );
+      } );
+    } else if( w.attachEvent ){
+      w.attachEvent( "onload", function(){
+        rp.poly();
+        w.clearInterval( run );
+      } );
+    }
+  }
+
+
+  // commonjs
+  if( typeof exports !== "undefined" ){
+    exports.loadCSS = loadCSS;
+  }
+  else {
+    w.loadCSS = loadCSS;
+  }
+}( typeof global !== "undefined" ? global : this ) );</script><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js" defer></script><script src="/js/main.js?v=2018.7.9" defer></script><!-- fancybox--><link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" defer></script><!-- busuanzi--><script async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script></head><body><section class="profile-close" id="cxo-profile"><div class="profile-avatar"><i class="fa fa-caret-left"></i><img src="/img/assets/cat.png"></div><!--.profile-saying
+  i.fa.fa-comment
+  .saying--><div class="cxo-profile-inner"><div class="profile-name">longlongyu</div><div class="profile-signature">for me</div><div class="friends"><div>FRIENDS</div><span><a href="//github.com/Longlongyu" target="_black">friendA</a></span><span><a href="//github.com/" target="_black">friendB</a></span><span><a href="//github.com/" target="_black">friendC</a></span></div><div class="read-progress"></div></div></section><header id="cxo-intro" style="height: 70vh;background-image: url(/img/intro/index-bg.png);"><nav id="cxo-intro-nav"><section><div class="intro-nav-title"><a href="/">Mr.Long's Blog</a></div><div class="intro-nav-label-box"><a href="/">Home</a><a href="/about/">About</a><a href="/archives/">Archives</a><a href="/tags/">Tags</a></div><i class="fa fa-bars intro-nav-menu"><div class="intro-nav-drop"><a href="/">Home</a><a href="/about/">About</a><a href="/archives/">Archives</a><a href="/tags/">Tags</a></div></i><div class="clear"></div></section></nav><h1 class="post-title">监控和管理Cassandra</h1><div class="post-intros"><div class="post-intro-meta"><span class="post-intro-time"><i class="post-intro-calendar fa fa-calendar"></i><span>2019-08-28</span></span><span class="post-intro-tags"><a class="intro-tag fa fa-tag" href="javascript:void(0)" date-tags="cassandra"> cassandra</a></span></div></div></header><article class="cxo-up" id="cxo-content-outer"><section id="cxo-content-inner"><article class="article-entry" id="post"><blockquote>
+<p>想必大家对数据库都有所耳闻，数据库其实就是存放数据的地方，但当大量的数据涌入时，数据库的性能将会接收极大的挑战。因此我们有必要对数据库的性能进行监视，这里介绍一个常用的数据库Cassandra。<br><img src="/2019/08/28/19-08-28/Cassandra.jpg" alt="Cassandra"></p>
+</blockquote>
+<h2 id="Cassandra"><a href="#Cassandra" class="headerlink" title="Cassandra"></a>Cassandra</h2><h3 id="数据库类型"><a href="#数据库类型" class="headerlink" title="数据库类型"></a>数据库类型</h3><blockquote>
+<p>一说到数据库，大家就会想到mysql，oracle这两种关系型数据库，像mongodb、cassandra这些非关系型数据库就有点陌生了。两者的区别是：关系型数据库最典型的数据结构是表，由二维表及其之间的联系所组成的一个数据组织；非关系型数据库严格上不是一种数据库，应该是一种数据结构化存储方法的集合，可以是文档或者键值对等。</p>
+</blockquote>
+<blockquote>
+<p>那么有人就会说，既然关系型数据库易于维护，使用又方便，为啥还用非关系型数据库呢？非关系型数据库最大的好处就是<font color="Red">支持海量数据的高效率读写</font>，像现在的大数据时代，如果读写速率一慢下来，那数据库的性能就会大打折扣。</p>
+</blockquote>
+<h3 id="Cassandra介绍"><a href="#Cassandra介绍" class="headerlink" title="Cassandra介绍"></a>Cassandra介绍</h3><blockquote>
+<p>Cassandra是一套开源分布式NoSQL(非关系型)数据库系统。Cassandra的主要特点就是它不是一个数据库，而是由一堆数据库节点共同构成的一个分布式网络服务，对Cassandra 的一个写操作，会被复制到其他节点上去，对Cassandra的读操作，也会被路由到某个节点上面去读取。对于一个Cassandra集群来说，扩展性能是比较简单的事情，只管在集群里面添加节点就可以了。</p>
+</blockquote>
+<h3 id="Cassandra优点"><a href="#Cassandra优点" class="headerlink" title="Cassandra优点"></a>Cassandra优点</h3><blockquote>
+<p>它和其他数据库比较，有三个突出特点：</p>
+<ul>
+<li>1   模式灵活<pre><code>使用Cassandra，像文档存储，你不必提前解决记录中的字段。你可以在系统运行时随意的添加或移除字段。这是一个惊人的效率提升，特别是在大型部署上。</code></pre></li>
+<li>2   可扩展性<pre><code>Cassandra是纯粹意义上的水平扩展。为给集群添加更多容量，可以指向另一台电脑。你不必重启任何进程，改变应用查询，或手动迁移任何数据。</code></pre></li>
+<li>3   多数据中心<pre><code>你可以调整你的节点布局来避免某一个数据中心起火，一个备用的数据中心将至少有每条记录的完全复制。</code></pre></li>
+</ul>
+</blockquote>
+<h3 id="Cassandra监视"><a href="#Cassandra监视" class="headerlink" title="Cassandra监视"></a>Cassandra监视</h3><blockquote>
+<p>了解Cassandra集群的性能特点有助于诊断和维护Cassandra。这里主要介绍的是nodetool工具，nodetool是一个命令行的工具集，它可以监控Cassandra和执行例行的数据库操作。作为内建的工具，nodetool一般用于在节点上直接运行。</p>
+</blockquote>
+<blockquote>
+<p>nodetool工具集提供了一批用于查看表的指标、服务器指标和压缩统计</p>
+<ul>
+<li>nodetool cfstats         显示了每个表和keyspace的统计数据</li>
+<li>nodetool cfhistograms          提供了表的统计数据，包括读写延迟，行大小，列的数量和SSTable的数量</li>
+<li>nodetool netstats           提供了网络连接操作的统计数据。</li>
+<li>nodetool tpstats             提供了如active、pending以及完成的任务等Cassandra操作的每个阶段的状态</li>
+</ul>
+</blockquote>
+<p>nodetool cfstats命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br></pre></td><td class="code"><pre><span class="line">D:\EBOOK\NoSQL\apache-cassandra-\bin&gt;nodetool cfstats</span><br><span class="line">Starting NodeTool</span><br><span class="line">Keyspace: system_traces</span><br><span class="line">        Read Count:</span><br><span class="line">        Read Latency: NaN ms.</span><br><span class="line">        Write Count:</span><br><span class="line">        Write Latency: NaN ms.</span><br><span class="line">        Pending Flushes:</span><br><span class="line">                Table: events</span><br><span class="line">                SSTable count:</span><br><span class="line">                Space used (live):</span><br><span class="line">                Space used (total):</span><br><span class="line">                Space used by snapshots (total):</span><br><span class="line">                Off heap memory used (total):</span><br><span class="line">                SSTable Compression Ratio: 0.0</span><br><span class="line">                Number of keys (estimate): -</span><br><span class="line">                Memtable cell count:</span><br><span class="line">                Memtable data size:</span><br><span class="line">                Memtable off heap memory used:</span><br><span class="line">                Memtable switch count:</span><br><span class="line">                Local read count:</span><br><span class="line">                Local read latency: NaN ms</span><br><span class="line">                Local</span><br><span class="line">                Local write latency: NaN ms</span><br><span class="line">                Pending flushes:</span><br><span class="line">                Bloom filter</span><br><span class="line">                Bloom filter false ratio: 0.00000</span><br><span class="line">                Bloom filter space used:</span><br><span class="line">                Bloom filter off heap memory used:</span><br><span class="line">                Index summary off heap memory used:</span><br><span class="line">                Compression metadata off heap memory used:</span><br><span class="line">                Compacted partition minimum bytes:</span><br><span class="line">                Compacted partition maximum bytes:</span><br><span class="line">                Compacted partition mean bytes:</span><br><span class="line">                Average live cells per slice (last five minutes): NaN</span><br><span class="line">                Maximum live cells per slice (</span><br><span class="line">                Average tombstones per slice (last five minutes): NaN</span><br><span class="line">                Maximum tombstones per slice (</span><br><span class="line"> </span><br><span class="line">                Table: sessions</span><br><span class="line">                SSTable count:</span><br><span class="line">                Space used (live):</span><br><span class="line">                Space used (total):</span><br><span class="line">                Space used by snapshots (total):</span><br><span class="line">                Off heap memory used (total):</span><br><span class="line">                SSTable Compression Ratio: 0.0</span><br><span class="line">                Number of keys (estimate): -</span><br><span class="line">                Memtable cell count:</span><br><span class="line">                Memtable data size:</span><br><span class="line">                Memtable off heap memory used:</span><br><span class="line">                Memtable switch count:</span><br><span class="line">                Local read count:</span><br><span class="line">                Local read latency: NaN ms</span><br><span class="line">                Local</span><br><span class="line">                Local write latency: NaN ms</span><br><span class="line">                Pending flushes:</span><br><span class="line">                Bloom filter</span><br><span class="line">                Bloom filter false ratio: 0.00000</span><br><span class="line">                Bloom filter space used:</span><br><span class="line">                Bloom filter off heap memory used:</span><br><span class="line">                Index summary off heap memory used:</span><br><span class="line">                Compression metadata off heap memory used:</span><br><span class="line">                Compacted partition minimum bytes:</span><br><span class="line">                Compacted partition maximum bytes:</span><br><span class="line">                Compacted partition mean bytes:</span><br><span class="line">                Average live cells per slice (last five minutes): NaN</span><br><span class="line">                Maximum live cells per slice (</span><br><span class="line">                Average tombstones per slice (last five minutes): NaN</span><br><span class="line">                Maximum tombstones per slice (</span><br><span class="line"> </span><br><span class="line">----------------</span><br><span class="line">Keyspace: system</span><br><span class="line">        Read Count:</span><br><span class="line">        Read Latency: 7.373384615384615 ms.</span><br><span class="line">        Write Count:</span><br><span class="line">...</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>nodetool cfhistograms命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Percentile  SSTables     Write Latency      Read Latency    Partition Size       Cell Count</span><br><span class="line">                              (micros)          (micros)           (bytes)                  </span><br><span class="line">50%            2.00              0.00           8239.00              924                20</span><br><span class="line">75%            4.00              0.00           9887.00             1109                20</span><br><span class="line">95%            4.00              0.00          51012.00             1916                24</span><br><span class="line">98%            4.00              0.00          51012.00             2299                29</span><br><span class="line">99%            4.00              0.00          51012.00             2759                35</span><br><span class="line">Min            0.00              0.00            150.00               73                 2</span><br><span class="line">Max            4.00              0.00          51012.00             3973                60</span><br></pre></td></tr></table></figure>
+
+<p>nodetool netstats命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">D:\EBOOK\NoSQL\apache-cassandra-\bin&gt;nodetool netstats</span><br><span class="line">Starting NodeTool</span><br><span class="line">Mode: NORMAL</span><br><span class="line">Not sending any streams.</span><br><span class="line">Read Repair Statistics:</span><br><span class="line">Attempted:</span><br><span class="line">Mismatch (Blocking):</span><br><span class="line">Mismatch (Background):</span><br><span class="line">Pool Name                    Active   Pending      Completed</span><br><span class="line">Large messages                  n/a</span><br><span class="line">Small messages                  n/a</span><br><span class="line">Gossip messages                 n/a</span><br></pre></td></tr></table></figure>
+
+<p>nodetool tpstats命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">D:\EBOOK\NoSQL\apache-cassandra-\bin&gt;nodetool tpstats</span><br><span class="line">Starting NodeTool</span><br><span class="line">Pool Name                    Active   Pending      Completed   Blocked  All time blocked</span><br><span class="line">MutationStage</span><br><span class="line">ReadStage</span><br><span class="line">RequestResponseStage</span><br><span class="line">ReadRepairStage</span><br><span class="line">CounterMutationStage</span><br><span class="line">HintedHandoff</span><br><span class="line">MiscStage</span><br><span class="line">CompactionExecutor</span><br><span class="line">MemtableReclaimMemory</span><br><span class="line">PendingRangeCalculator</span><br><span class="line">GossipStage</span><br><span class="line">MigrationStage</span><br><span class="line">MemtablePostFlush</span><br><span class="line">ValidationExecutor</span><br><span class="line">Sampler</span><br><span class="line">MemtableFlushWriter</span><br><span class="line">InternalResponseStage</span><br><span class="line">AntiEntropyStage</span><br><span class="line">CacheCleanupExecutor</span><br><span class="line">Native-Transport-Requests                                                          </span><br><span class="line"> </span><br><span class="line">Message type           Dropped</span><br><span class="line">READ</span><br><span class="line">RANGE_SLICE</span><br><span class="line">_TRACE</span><br><span class="line">MUTATION</span><br><span class="line">COUNTER_MUTATION</span><br><span class="line">REQUEST_RESPONSE</span><br><span class="line">PAGED_RANGE</span><br><span class="line">READ_REPAIR</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>以上就是运用nodetool工具对Cassandra进行监视，如果想直观理解Cassandra，大家可以去下载NoSQL Manager for Cassandra，这是一个Cassandra的可视化工具。</p>
+</blockquote>
+</article><!-- lincense--><div class="license-wrapper"><p> <span>Author:  </span><a href="http://yoursite.com">John Doe</a></p><p> <span>Link:  </span><a href="http://yoursite.com/2019/08/28/19-08-28/">http://yoursite.com/2019/08/28/19-08-28/</a></p><p> <span>Copyright:  </span><span>All articles in this blog are licensed under <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/3.0">CC BY-NC-SA 3.0</a> unless stating additionally.</span></p></div><div class="post-paginator"><a class="prevSlogan" href="/2019/08/29/19-08-29/" title="如何从2235条数据中选择最小的10条"><span>< PreviousPost</span><br><span class="prevTitle">如何从2235条数据中选择最小的10条</span></a><a class="nextSlogan" href="/2019/08/27/19-08-27/" title="linux常用命令"><span>NextPost ></span><br><span class="nextTitle">linux常用命令</span></a><div class="clear"></div></div><div id="comment"></div></section></article><footer id="cxo-footer-outer"><div id="cxo-footer-inner"><p class="footer-container"><span>Site by </span><a href="http://hexo.io"><span>Hexo</span></a><span> | theme </span><a href="https://github.com/Longlongyu/hexo-theme-Cxo"><span>Cxo</span></a></p><i class="fa fa-user"> </i><span id="busuanzi_value_site_uv"></span><span> | </span><i class="fa fa-eye"> </i><span id="busuanzi_value_site_pv"></span></div></footer><!-- catelog--><div class="toc-wrapper" style="top: 70vh;"><div class="toc-catalog"><i class="fa fa-list"> </i><span>CATALOG</span></div><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Cassandra"><span class="toc-number">1.</span> <span class="toc-text">Cassandra</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#数据库类型"><span class="toc-number">1.1.</span> <span class="toc-text">数据库类型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Cassandra介绍"><span class="toc-number">1.2.</span> <span class="toc-text">Cassandra介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Cassandra优点"><span class="toc-number">1.3.</span> <span class="toc-text">Cassandra优点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Cassandra监视"><span class="toc-number">1.4.</span> <span class="toc-text">Cassandra监视</span></a></li></ol></li></ol></div><!-- top--><i class="fa fa-arrow-up close" id="go-up" aria-hidden="true"></i><script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body></html>
