@@ -150,7 +150,7 @@
 </blockquote>
 <p>至此，docker的离线安装就结束了，是不是很简单~</p>
 <h2 id="docker组件安装"><a href="#docker组件安装" class="headerlink" title="docker组件安装"></a>docker组件安装</h2><blockquote>
-<p><strong>环境都已经搭好了，接下来就是安装各种组件了</strong><br><a href="https://hub.docker.com/" target="_blank" rel="noopener">docker镜像包</a>docker的images包都在他的官网上，可在联网的情况下直接进行拉取</p>
+<p><strong>环境都已经搭好了，接下来就是安装各种组件了</strong><br><a href="https://hub.docker.com/" target="_blank" rel="noopener">docker镜像包</a>  docker的images包都在他的官网上，可在联网的情况下直接进行拉取</p>
 </blockquote>
 <h3 id="安装mysql镜像"><a href="#安装mysql镜像" class="headerlink" title="安装mysql镜像"></a>安装mysql镜像</h3><blockquote>
 <p>先在官网搜索mysql，如图：<br><img src="/2021/02/05/21-02-05/mysql1.png" alt></p>
@@ -161,7 +161,9 @@
 <blockquote>
 <p>在安装有docker环境的服务器执行命令：<code>docker pull mysql:版本号</code></p>
 </blockquote>
-<h3 id="查看mysql镜像是否下载成功"><a href="#查看mysql镜像是否下载成功" class="headerlink" title="查看mysql镜像是否下载成功"></a>查看mysql镜像是否下载成功</h3><p>查看所有镜像<code>docker images</code></p>
+<h3 id="查看mysql镜像是否下载成功"><a href="#查看mysql镜像是否下载成功" class="headerlink" title="查看mysql镜像是否下载成功"></a>查看mysql镜像是否下载成功</h3><blockquote>
+<p>查看所有镜像<code>docker images</code></p>
+</blockquote>
 <p><img src="/2021/02/05/21-02-05/images.png" alt></p>
 <h3 id="创建mysql容器"><a href="#创建mysql容器" class="headerlink" title="创建mysql容器"></a>创建mysql容器</h3><blockquote>
 <p>创建容器：<code>docker run --name mysql01 -p 3306:3306  -e MYSQL_ROOT_PASSWORD=root -d mysql:5.7.31</code></p>
@@ -172,13 +174,16 @@
 <li>-e：指定mysql的参数，如：MYSQL_ROOT_PASSWORD=root，指定mysql的密码为”root”</li>
 <li>-d：允许容器后台运行。</li>
 <li>mysql:tag 要使用的mysql的镜像，tag是mysql的版本号。</li>
-<li><blockquote>
+</ul>
+<blockquote>
 <p>执行之后，使用<code>docker ps</code>查看正在运行的容器：<br><img src="/2021/02/05/21-02-05/container.png" alt></p>
 </blockquote>
-</li>
-</ul>
-<h3 id="进入mysql容器"><a href="#进入mysql容器" class="headerlink" title="进入mysql容器"></a>进入mysql容器</h3><p><code>docker exec -it mysql01 bash</code><br><img src="/2021/02/05/21-02-05/in.png" alt><br>可以看到，已经安装mysql成功了！！！</p>
-<h3 id="退出容器"><a href="#退出容器" class="headerlink" title="退出容器"></a>退出容器</h3><p>退出mysql<br><code>exit</code><br>退出mysql容器<br><code>exit</code><br><strong>或者</strong> <code>ctrl+p 接着ctrl+q</code>回到linux命令行</p>
+<h3 id="进入mysql容器"><a href="#进入mysql容器" class="headerlink" title="进入mysql容器"></a>进入mysql容器</h3><blockquote>
+<p><code>docker exec -it mysql01 bash</code><br><img src="/2021/02/05/21-02-05/in.png" alt><br>可以看到，已经安装mysql成功了！！！</p>
+</blockquote>
+<h3 id="退出容器"><a href="#退出容器" class="headerlink" title="退出容器"></a>退出容器</h3><blockquote>
+<p>退出mysql<code>exit</code>退出mysql容器<code>exit</code><br><strong>或者</strong> <code>ctrl+p 接着ctrl+q</code>回到linux命令行</p>
+</blockquote>
 </article><!-- lincense--><div class="post-paginator"><a class="nextSlogan" href="/2019/10/16/19-10-16/" title="wget无法解析主机地址"><span>NextPost ></span><br><span class="nextTitle">wget无法解析主机地址</span></a><div class="clear"></div></div><div id="comment"><div id="lv-container" data-id="city" data-uid="MTAyMC80NjEwOC8yMjYxOQ=="><script>(function (d, s) {
   var j, e = d.getElementsByTagName(s)[0];
   if (typeof LivereTower === 'function') { return; }
